@@ -1,0 +1,28 @@
+program Simple;
+
+var
+countOfSimpleNumbers, currentNumber, i : longint;
+
+begin
+    countOfSimpleNumbers := 0;
+    currentNumber := 2;
+    while countOfSimpleNumbers < 10000 do
+        begin
+            i := 2;
+            while i < currentNumber do
+                begin
+                    if currentNumber mod i = 0 then
+                        begin
+                            break;
+                        end;
+                    i := i + 1;
+                end;
+            if i = currentNumber then
+                 begin
+                    countOfSimpleNumbers := countOfSimpleNumbers + 1;
+                 end;
+            currentNumber := currentNumber + 1;
+        end;
+    currentNumber := currentNumber - 1;
+    writeln(currentNumber);
+end.
