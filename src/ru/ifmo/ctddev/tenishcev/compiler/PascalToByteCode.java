@@ -25,6 +25,7 @@ public class PascalToByteCode implements SimplePascalListener {
     private Map<String, VariableContainer> variables;
     private Stack<Label> ifStack;
     private Stack<Label> whileStack;
+    private Stack<Label> forStack;
     private MethodVisitor mainVisitor;
 
     public PascalToByteCode(){
@@ -32,6 +33,7 @@ public class PascalToByteCode implements SimplePascalListener {
         variables = new HashMap<>();
         ifStack = new Stack<>();
         whileStack = new Stack<>();
+        forStack = new Stack<>();
     }
 
     private String getByteType(String text) {
@@ -51,6 +53,8 @@ public class PascalToByteCode implements SimplePascalListener {
                 mainVisitor.visitInsn(IADD); // +
             } else if (context.modWord() != null) {
                 mainVisitor.visitInsn(IREM); // %
+            } else if (context.divWord() != null) {
+                mainVisitor.visitInsn(IDIV); // /
             }
         }
     }
@@ -63,6 +67,29 @@ public class PascalToByteCode implements SimplePascalListener {
             String number = context.number().getText();
             mainVisitor.visitLdcInsn(Integer.parseInt(number));
         }
+    }
+
+    private void setJump(SimplePascalParser.OpContext operation, Label label) {
+        if (operation.equals() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPNE, label); // ==
+        } else if (operation.less() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPGE, label); // <
+        } else if (operation.great() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPLE, label); // >
+        } else if (operation.notEq() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPEQ, label); // !=
+        } else if (operation.lessOrEq() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPGT, label); // <=
+        } else if (operation.greatOrEq() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPLT, label); // >=
+        }
+    }
+
+    private void makeAssigment(SimplePascalParser.AssigmentContext ctx) {
+        SimplePascalParser.ExpressionArithmeticContext context = ctx.expressionArithmetic();
+        parseArithmetic(context);
+        VariableContainer variable = variables.get(ctx.VAR().getText());
+        mainVisitor.visitFieldInsn(PUTSTATIC, nameOfProgram, variable.byteName, variable.byteType);
     }
 
     @Override
@@ -132,15 +159,62 @@ public class PascalToByteCode implements SimplePascalListener {
 
     @Override
     public void enterAssigment(SimplePascalParser.AssigmentContext ctx) {
-        SimplePascalParser.ExpressionArithmeticContext context = ctx.expressionArithmetic();
-        parseArithmetic(context);
-        VariableContainer variable = variables.get(ctx.VAR().getText());
-        mainVisitor.visitFieldInsn(PUTSTATIC, nameOfProgram, variable.byteName, variable.byteType);
+        if (ctx.getParent() instanceof SimplePascalParser.LineContext) {
+            makeAssigment(ctx);
+        }
     }
 
     @Override
     public void exitAssigment(SimplePascalParser.AssigmentContext ctx) {
 
+    }
+
+    @Override
+    public void enterForLoop(SimplePascalParser.ForLoopContext ctx) {
+        makeAssigment(ctx.assigment());
+        VariableContainer variable = variables.get(ctx.assigment().VAR().getText());
+        mainVisitor.visitFieldInsn(GETSTATIC, nameOfProgram, variable.byteName, variable.byteType);
+        parseArithmetic(ctx.expressionArithmetic());
+        Label labelAfter = new Label();
+        if (ctx.side().to() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPGT, labelAfter); // <=
+        } else {
+            mainVisitor.visitJumpInsn(IF_ICMPLT, labelAfter); // >=
+        }
+        Label labelBefore = new Label();
+        mainVisitor.visitLabel(labelBefore);
+        forStack.push(labelAfter);
+        forStack.push(labelBefore);
+    }
+
+    @Override
+    public void exitForLoop(SimplePascalParser.ForLoopContext ctx) {
+        Label labelBefore = forStack.pop();
+        Label labelAfter = forStack.pop();
+
+        // check condition before change variable
+        VariableContainer variable = variables.get(ctx.assigment().VAR().getText());
+        mainVisitor.visitFieldInsn(GETSTATIC, nameOfProgram, variable.byteName, variable.byteType);
+        parseArithmetic(ctx.expressionArithmetic());
+        if (ctx.side().to() != null) {
+            mainVisitor.visitJumpInsn(IF_ICMPGE, labelAfter); // <
+        } else {
+            mainVisitor.visitJumpInsn(IF_ICMPLE, labelAfter); // >
+        }
+
+        // inc or dec variable
+        mainVisitor.visitFieldInsn(GETSTATIC, nameOfProgram, variable.byteName, variable.byteType);
+        mainVisitor.visitInsn(ICONST_1); // 1
+        if (ctx.side().to() != null) {
+            mainVisitor.visitInsn(IADD); // +
+        } else {
+            mainVisitor.visitInsn(ISUB); // -
+        }
+        mainVisitor.visitFieldInsn(PUTSTATIC, nameOfProgram, variable.byteName, variable.byteType);
+
+        // jump to start and end of for
+        mainVisitor.visitJumpInsn(GOTO, labelBefore);
+        mainVisitor.visitLabel(labelAfter);
     }
 
     @Override
@@ -152,19 +226,7 @@ public class PascalToByteCode implements SimplePascalListener {
         Label labelAfter = new Label();
         whileStack.push(labelAfter);
         whileStack.push(labelBefore);
-        if (context.op().equals() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPNE, labelAfter); // ==
-        } else if (context.op().less() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPGE, labelAfter); // <
-        } else if (context.op().great() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPLE, labelAfter); // >
-        } else if (context.op().notEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPEQ, labelAfter); // !=
-        } else if (context.op().lessOrEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPGT, labelAfter); // <=
-        } else if (context.op().greatOrEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPLT, labelAfter); // >=
-        }
+        setJump(context.op(), labelAfter);
     }
 
     @Override
@@ -179,19 +241,7 @@ public class PascalToByteCode implements SimplePascalListener {
         context.expressionArithmetic().forEach(this::parseArithmetic);
         Label label = new Label();
         ifStack.push(label);
-        if (context.op().equals() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPNE, label); // ==
-        } else if (context.op().less() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPGE, label); // <
-        } else if (context.op().great() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPLE, label); // >
-        } else if (context.op().notEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPEQ, label); // !=
-        } else if (context.op().lessOrEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPGT, label); // <=
-        } else if (context.op().greatOrEq() != null) {
-            mainVisitor.visitJumpInsn(IF_ICMPLT, label); // >=
-        }
+        setJump(context.op(), label);
     }
 
     @Override
@@ -335,6 +385,36 @@ public class PascalToByteCode implements SimplePascalListener {
     }
 
     @Override
+    public void enterSide(SimplePascalParser.SideContext ctx) {
+
+    }
+
+    @Override
+    public void exitSide(SimplePascalParser.SideContext ctx) {
+
+    }
+
+    @Override
+    public void enterTo(SimplePascalParser.ToContext ctx) {
+
+    }
+
+    @Override
+    public void exitTo(SimplePascalParser.ToContext ctx) {
+
+    }
+
+    @Override
+    public void enterDownto(SimplePascalParser.DowntoContext ctx) {
+
+    }
+
+    @Override
+    public void exitDownto(SimplePascalParser.DowntoContext ctx) {
+
+    }
+
+    @Override
     public void enterDoWord(SimplePascalParser.DoWordContext ctx) {
 
     }
@@ -357,6 +437,16 @@ public class PascalToByteCode implements SimplePascalListener {
 
     @Override
     public void exitModWord(SimplePascalParser.ModWordContext ctx) {
+    }
+
+    @Override
+    public void enterDivWord(SimplePascalParser.DivWordContext ctx) {
+
+    }
+
+    @Override
+    public void exitDivWord(SimplePascalParser.DivWordContext ctx) {
+
     }
 
     @Override

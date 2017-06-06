@@ -13,6 +13,7 @@ type : 'longint';
 block : 'begin' line SEMICOLON? (SEMICOLON line SEMICOLON?)* 'end';
 
 line : ifStatement
+    | forLoop
     | whileLoop
     | assigment
     | block
@@ -20,6 +21,8 @@ line : ifStatement
     | brk;
 
 assigment : VAR ':=' expressionArithmetic;
+
+forLoop : 'for' assigment side expressionArithmetic doWord line; // for i := 1 to i do
 
 whileLoop : 'while' expressionLogic doWord line;
 
@@ -31,7 +34,7 @@ brk : 'break' SEMICOLON;
 
 expressionLogic : expressionCompare;
 expressionCompare : expressionArithmetic op expressionArithmetic;
-expressionArithmetic : expressionValueEmbeded ((plus | minus | modWord) expressionValueEmbeded)?;
+expressionArithmetic : expressionValueEmbeded ((plus | minus | modWord | divWord) expressionValueEmbeded)?;
 expressionValueEmbeded : variable
                         | number
                         ;
@@ -41,9 +44,13 @@ op : less | lessOrEq | great | greatOrEq | equals | notEq;
 variable : VAR;
 number : INT;
 
+side : to | downto ;
+to : TO;
+downto : DOWNTO;
 doWord : 'do';
 thenWord : 'then';
 modWord : 'mod';
+divWord : 'div';
 minus : MINUS;
 plus : PLUS;
 less : LESS_SIGN;
@@ -66,6 +73,9 @@ LSEQ_SIGN  : '<=';
 GRET_SIGN  : '>';
 GREQ_SIGN  : '>=';
 NOTEQUALS  : '<>';
+
+TO         : 'to';
+DOWNTO     : 'downto';
 
 VAR : [a-zA-Z_] [a-zA-Z0-9_]*;
 

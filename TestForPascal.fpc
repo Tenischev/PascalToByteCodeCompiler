@@ -1,0 +1,15 @@
+program TestForAndDiv;
+
+var
+a, aa : longint;
+
+begin
+  for aa := 1 to 10 do
+    if aa mod 2 = 0 then
+      writeln(aa);
+  for a := 10 downto 5 do
+    begin
+      writeln(a + aa);
+      aa := a div 3;
+    end;
+end.
