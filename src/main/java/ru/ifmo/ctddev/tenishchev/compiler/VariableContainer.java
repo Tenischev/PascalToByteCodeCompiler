@@ -1,4 +1,4 @@
-package ru.ifmo.ctddev.tenishcev.compiler;
+package ru.ifmo.ctddev.tenishchev.compiler;
 
 /**
  * Created by kris13 on 04.06.17.

@@ -1,22 +1,24 @@
-package ru.ifmo.ctddev.tenishcev.compiler;
+package ru.ifmo.ctddev.tenishchev.compiler;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
 /**
  * Created by kris13 on 08.05.15.
  */
 public class Main {
-    static final String fileName = "SimpleNumber";
+    private static final String PASCAL_EXTENSION = ".fpc";
 
     public static void main(String[] args) {
         try {
-            File file = new File(fileName + ".fpc");
-            ANTLRInputStream stream = new ANTLRInputStream(new FileInputStream(file));
+            CharStream stream = CharStreams.fromFileName(args[0] + PASCAL_EXTENSION);
             SimplePascalLexer lexer = new SimplePascalLexer(stream);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SimplePascalParser parser = new SimplePascalParser(tokens);

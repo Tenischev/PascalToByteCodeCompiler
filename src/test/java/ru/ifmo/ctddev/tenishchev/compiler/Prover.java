@@ -1,4 +1,4 @@
-package ru.ifmo.ctddev.tenishcev.compiler;
+package ru.ifmo.ctddev.tenishchev.compiler;
 
 import java.io.IOException;
 import java.io.InputStream;

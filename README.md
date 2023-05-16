@@ -1,10 +1,16 @@
-Contents:  
-|-src - source code for Pascal to Byte Code compiler.  
-|--\SimplePascal.g4 - simple grammar cut for execute SimpleNumber.fpc  
-|--\Pascal.g4 - more extended pascal grammar for future use.  
-|--\Prover - calculate 10000th simple number in java code, runs SimpleNumber.fpc and check time, runs SimpleNumber.fpc  recompiled into byte code and check time  
-|--\PascalToByteCode - implement antlr's SimplePascalListener and use asm for create byte code.  
-|--\Main - for execute Pascal to Byte Code compiler.  
-|-lib - folder with asm and antlr.  
-|-SimpleNumber.fpc - program for calculate 10000th simple number.  
-|-Simple.class - recompiled into byte code the SimpleNumber.fpc  
+Pascal to Java bytecode converter
+=
+
+Project allows converting program file written on Pascal into Java bytecode. 
+Using the self-written [ANTLR grammar](src/main/antlr/Pascal.g4) Pascal file is translating and converting to bytecode with ASM library.
+
+---
+Grammar files:
+* [SimplePascal](src/main/antlr/SimplePascal.g4) (without support of procedures, only longint type supported)
+* [Pascal](src/main/antlr/Pascal.g4)
+
+---
+Test examples:
+* Simple test of loops and arithmetic operations [TestForPascal](src/test/resources/TestForPascal.fpc)
+* Calculation of 10000th simple number - [SimpleNumber](src/test/resources/SimpleNumber.fpc)
+

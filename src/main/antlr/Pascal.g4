@@ -1,5 +1,9 @@
 grammar Pascal;
 
+@header {
+package ru.ifmo.ctddev.tenishchev.compiler;
+}
+
 program : nameOfProg defs block '.';
 
 nameOfProg : 'program' PROGNAME SEMICOLON;

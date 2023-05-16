@@ -1,0 +1,21 @@
+plugins{
+    id 'java'
+    id 'antlr'
+}
+
+group = "ru.ifmo.ctddev.tenishchev.compiler"
+version = "1.0.0"
+sourceCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+generateGrammarSource {
+    outputDirectory = file("${project.buildDir}/generated-src/antlr/main/ru/ifmo/ctddev/tenishchev/compiler")
+}
+
+dependencies {
+    antlr 'org.antlr:antlr4:4.7.1'
+    implementation 'org.ow2.asm:asm:5.0.4'
+}
